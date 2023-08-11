@@ -72,6 +72,8 @@ bool FReplicatorCodeGenerator::Generate(
 	FString Message;
 	FString RegistrationIncludeCode;
 
+	FString GeneratedActorsInclude;
+
 	// Generate replicators code
 	TArray<TSharedPtr<FReplicatedActorDecorator>> ActorDecoratorsToGenReplicator;
 	FString RegisterReplicatorCode;
@@ -99,6 +101,11 @@ bool FReplicatorCodeGenerator::Generate(
 		RegistrationIncludeCode.Append(GeneratedResult.IncludeActorCode + TEXT("\n"));
 		RegistrationIncludeCode.Append(FString::Printf(TEXT("#include \"%s\"\n"), *GeneratedResult.HeadFileName));
 		RegisterReplicatorCode.Append(GeneratedResult.RegisterReplicatorCode + TEXT("\n"));
+
+		if (ActorDecorator->GetStructPropertyDecorators().Num() > 0)
+		{
+			GeneratedActorsInclude.Append(GeneratedResult.IncludeActorCode);
+		}
 	}
 
 	// Channel data
@@ -167,11 +174,26 @@ bool FReplicatorCodeGenerator::Generate(
 	ReplicationCodeBundle.GlobalStructCodes.Append(TEXT("#pragma once\n"));
 	ReplicationCodeBundle.GlobalStructCodes.Append(TEXT("#include \"ChanneldUtils.h\"\n"));
 	ReplicationCodeBundle.GlobalStructCodes.Append(FString::Printf(TEXT("#include \"%s\"\n"), *GenManager_GlobalStructProtoHeaderFile));
+	ReplicationCodeBundle.GlobalStructCodes.Append(GeneratedActorsInclude);
 	for (auto StructDecorator : GlobalStructDecorators)
 	{
+		if (StructDecorator->GetProtoStateMessageType().Contains(TEXT("RPCParams")))
+		{
+			continue;
+		}
 		ReplicationCodeBundle.GlobalStructCodes.Append(StructDecorator->GetDeclaration_PropPtrGroupStruct());
 		ReplicationCodeBundle.GlobalStructProtoDefinitions.Append(StructDecorator->GetDefinition_ProtoStateMessage());
 	}
+
+	for (auto StructDecorator : GlobalStructDecorators)
+	{
+		if (StructDecorator->GetProtoStateMessageType().Contains(TEXT("RPCParams")))
+		{
+			ReplicationCodeBundle.GlobalStructCodes.Append(StructDecorator->GetDeclaration_PropPtrGroupStruct());
+			ReplicationCodeBundle.GlobalStructProtoDefinitions.Append(StructDecorator->GetDefinition_ProtoStateMessage());
+		}
+	}
+
 
 	FStringFormatNamedArguments ProtoFormatArgs;
 	ProtoFormatArgs.Add(TEXT("Declare_ProtoPackageName"), ProtoPackageName);
