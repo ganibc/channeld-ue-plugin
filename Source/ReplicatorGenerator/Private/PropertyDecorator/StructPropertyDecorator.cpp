@@ -63,17 +63,28 @@ FString FStructPropertyDecorator::GetDeclaration_PropertyPtr()
 	return FString::Printf(TEXT("%s %s"), *GetDeclaration_PropPtrGroupStructName(), *GetPointerName());
 }
 
-FString FStructPropertyDecorator::GetCode_AssignPropPointer(const FString& Container, const FString& AssignTo, int32 MemOffset)
+FString FStructPropertyDecorator::GetCode_AssignPropPointer(const FString& Container, const FString& AssignTo, int32 PropIndex)
 {
 	FStringFormatNamedArguments FormatArgs;
 	FormatArgs.Add(TEXT("Ref_AssignTo"), AssignTo);
 	FormatArgs.Add(TEXT("Ref_ContainerAddr"), Container);
 	FormatArgs.Add(TEXT("Declare_PropertyCPPType"), GetCPPType());
-	FormatArgs.Add(TEXT("Num_PropMemOffset"), MemOffset);
+	FormatArgs.Add(TEXT("Num_PropIndex"), PropIndex);
 	FormatArgs.Add(TEXT("Declare_PropPtrGroupStructName"), GetDeclaration_PropPtrGroupStructName());
     FormatArgs.Add(TEXT("Declare_PropertyName"), GetPropertyName());
 
 	return FString::Format(StructPropDeco_AssignPropPtrTemp, FormatArgs);
+}
+
+FString FStructPropertyDecorator::GetCode_AssignPropPointerForRPC(const FString& Container, const FString& AssignTo)
+{
+    FStringFormatNamedArguments FormatArgs;
+    FormatArgs.Add(TEXT("Ref_AssignTo"), AssignTo);
+    FormatArgs.Add(TEXT("Ref_ContainerAddr"), Container);
+    FormatArgs.Add(TEXT("Declare_PropertyCPPType"), GetCPPType());
+    FormatArgs.Add(TEXT("Num_PropMemOffset"), GetMemOffset());
+
+    return FString::Format(StructPropDeco_AssignPropPtrTempForRPC, FormatArgs);
 }
 
 TArray<FString> FStructPropertyDecorator::GetAdditionalIncludes()
@@ -106,7 +117,7 @@ FString FStructPropertyDecorator::GetCode_SetDeltaState(const FString& TargetIns
 	);
 }
 
-FString FStructPropertyDecorator::GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull)
+FString FStructPropertyDecorator::GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, int32 PropIndex, bool ConditionFullStateIsNull)
 {
 	return FString::Printf(
 		TEXT("{\nvoid* PropAddr = (uint8*)%s + %d; if (%s::Merge(PropAddr, %s&%s->%s(), %s->mutable_%s(), World, ForceMarge))\n{\n  bStateChanged = true;\n}\n}\n"),
@@ -139,7 +150,7 @@ FString FStructPropertyDecorator::GetCode_SetPropertyValueTo(const FString& Targ
 	);
 }
 
-FString FStructPropertyDecorator::GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName)
+FString FStructPropertyDecorator::GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName, int32 PropIndex)
 {
 	return FString::Printf(
 		TEXT("{\nvoid* PropAddr = (uint8*)%s + %d; if (%s::SetPropertyValue(PropAddr, &%s->%s(), %s))\n{\n  bStateChanged = true;\n}\n}\n"),

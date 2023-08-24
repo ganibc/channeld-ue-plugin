@@ -275,7 +275,7 @@ bool FReplicatorCodeGenerator::GenerateReplicatorCode(
 	);
     FormatArgs.Add(
         TEXT("Num_PropCount"),
-        ActorDecorator->GetStructPropertyDecorators().Num()
+        ActorDecorator->GetPropertyDecorators().Num()
     );
 
 	// RPC

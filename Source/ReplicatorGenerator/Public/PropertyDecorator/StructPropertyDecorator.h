@@ -79,7 +79,12 @@ PropPointerMemOffsetCache[{Num_PropIndex}] = Offset;
 
 const static TCHAR* StructPropDeco_AssignPropPtrTemp =
     LR"EOF(
-        {Ref_AssignTo} = ({Declare_PropPtrGroupStructName})(PropPointerMemOffsetCache[{Num_PropIndex}]);
+    {Ref_AssignTo} = ({Declare_PropPtrGroupStructName})((uint8*){Ref_ContainerAddr} + PropPointerMemOffsetCache[{Num_PropIndex}]);
+)EOF";
+
+const static TCHAR* StructPropDeco_AssignPropPtrTempForRPC =
+    LR"EOF(
+    {Ref_AssignTo} = ({Declare_PropPtrGroupStructName})((uint8*){Ref_ContainerAddr} + {Num_PropMemOffset});
 )EOF";
 
 const static TCHAR* StructPropDeco_SetDeltaStateArrayInnerTemp =
@@ -123,6 +128,7 @@ public:
 	virtual FString GetDeclaration_PropertyPtr() override;
 	
 	virtual FString GetCode_AssignPropPointer(const FString& Container, const FString& AssignTo, int32 PropIndex) override;
+    virtual FString GetCode_AssignPropPointerForRPC(const FString& Container, const FString& AssignTo) override;
 	
 	virtual TArray<FString> GetAdditionalIncludes() override;
 	
@@ -131,17 +137,17 @@ public:
 	
 	virtual FString GetCode_SetDeltaState(const FString& TargetInstance, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false) override;
 
-	virtual FString GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false);
+	virtual FString GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, int32 PropIndex, bool ConditionFullStateIsNull = false) override;
 
 	virtual FString GetCode_SetDeltaStateArrayInner(const FString& TargetInstance, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false) override;
 
 	virtual FString GetCode_SetPropertyValueTo(const FString& TargetInstance, const FString& NewStateName, const FString& AfterSetValueCode) override;
 
-	virtual FString GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName);
+	virtual FString GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName, int32 PropIndex) override;
 
 	virtual FString GetCode_SetPropertyValueArrayInner(const FString& TargetInstance, const FString& NewStateName) override;
 
-	FString GetDeclaration_PropPtrGroupStruct();
+	virtual FString GetDeclaration_PropPtrGroupStruct();
 
 	FString GetDeclaration_PropPtrGroupStructName();
 

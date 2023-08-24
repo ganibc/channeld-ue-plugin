@@ -17,6 +17,11 @@ PropPointerMemOffsetCache[{Num_PropIndex}] = Offset;
 {Ref_AssignTo} = ({Declare_PropertyCPPType}*)((uint8*){Ref_ContainerAddr} + Offset);
 )EOF";
 
+const static TCHAR* PropDecorator_AssignPropPtrTempForRPC =
+LR"EOF(
+    {Ref_AssignTo} = ({Declare_PropertyCPPType}*)((uint8*){Ref_ContainerAddr} + {Num_PropMemOffset});
+)EOF";
+
 const static TCHAR* PropDecorator_SetDeltaStateTemplate =
 	LR"EOF(
 if ({Code_BeforeCondition}!({Code_ActorPropEqualToProtoState}))
@@ -229,6 +234,8 @@ public:
 
     virtual FString GetCode_AssignPropPointerRuntime(const FString& Container, const FString& AssignTo, int32 PropIndex);
 
+    virtual FString GetCode_AssignPropPointerForRPC(const FString& Container, const FString& AssignTo);
+
 	/**
 	 * Code that get field value from protobuf message
 	 *
@@ -273,6 +280,7 @@ public:
 	virtual FString GetCode_SetDeltaState(const FString& TargetInstance, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false);
 
 	virtual FString GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, int32 PropIndex, bool ConditionFullStateIsNull = false);
+    virtual FString GetCode_SetDeltaStateByMemOffsetForRPC(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull);
 
 	virtual FString GetCode_SetDeltaStateArrayInner(const FString& PropertyPointer, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false);
 
@@ -289,6 +297,7 @@ public:
 	virtual FString GetCode_OnStateChange(const FString& TargetInstanceName, const FString& NewStateName, bool NeedCallRepNotify = false);
 
 	virtual FString GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName, int32 PropIndex);
+    virtual FString GetCode_OnStateChangeByMemOffsetForRPC(const FString& ContainerName, const FString& NewStateName);
 
 	virtual FString GetCode_SetPropertyValueArrayInner(const FString& PropertyPointer, const FString& NewStateName);
 
