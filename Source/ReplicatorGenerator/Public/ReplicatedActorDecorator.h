@@ -243,6 +243,11 @@ public:
 	 */
 	FString GetCode_AssignPropertyPointers();
 
+    /**
+     * Get all code of assign property pointer but with runtime memory offset implementation
+     */
+    FString GetCode_AssignPropertyPointersRuntime();
+
 	/**
 	 * Get protobuf package name
 	 */

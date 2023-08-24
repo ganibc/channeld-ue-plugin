@@ -140,13 +140,13 @@ public:
 	virtual FString GetCode_ActorPropEqualToProtoState(const FString& FromActor, const FString& FromState, bool ForceFromPointer) override;
 	
 	virtual FString GetCode_SetDeltaState(const FString& TargetInstance, const FString& FullStateName, const FString& DeltaStateName,  bool ConditionFullStateIsNull) override;
-	virtual FString GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull) override;
+	virtual FString GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, int32 PropIndex, bool ConditionFullStateIsNull) override;
 
 	virtual FString GetCode_HasProtoFieldValueIn(const FString& StateName) override;
 
 	virtual FString GetCode_OnStateChange(const FString& TargetInstanceName, const FString& NewStateName, bool NeedCallRepNotify = false) override;
 	virtual FString GetCode_SetPropertyValueTo(const FString& TargetInstance, const FString& NewStateName, const FString& AfterSetValueCode) override;
-	virtual FString GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName) override;
+	virtual FString GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName, int32 PropIndex) override;
 
 	virtual TArray<FString> GetAdditionalIncludes() override;
 

@@ -5,27 +5,16 @@
 
 const static TCHAR* PropDecorator_AssignPropPtrTemp =
 		LR"EOF(
+    {Ref_AssignTo} = ({Declare_PropertyCPPType}*)((uint8*){Ref_ContainerAddr} + PropPointerMemOffsetCache[{Num_PropIndex}]);
+)EOF";
+
+const static TCHAR* PropDecorator_AssignPropPtrTempRuntime =
+    LR"EOF(
 FString PropertyName = TEXT("{Declare_PropertyName}");
-int32* OffsetPtr = PropPointerMemOffsetCache.Find(PropertyName);
-if (OffsetPtr != nullptr)
-{
-    {Ref_AssignTo} = ({Declare_PropertyCPPType}*)((uint8*){Ref_ContainerAddr} + *OffsetPtr);
-}
-else
-{
-    FProperty* Property = ActorClass->FindPropertyByName(FName(*PropertyName));
-    if (Property)
-    {   
-        int32 Offset = Property->GetOffset_ForInternal();
-        PropPointerMemOffsetCache.Emplace(PropertyName, Offset);
-        {Ref_AssignTo} = ({Declare_PropertyCPPType}*)((uint8*){Ref_ContainerAddr} + Offset);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("%s Replicator construct, but could not find property(%s) in cache or by name."), *ActorClass->GetName(), *PropertyName);
-        {Ref_AssignTo} = ({Declare_PropertyCPPType}*)((uint8*){Ref_ContainerAddr} + {Num_PropMemOffset});
-    }
-}
+FProperty* Property = ActorClass->FindPropertyByName(FName(*PropertyName));
+int32 Offset = Property->GetOffset_ForInternal();
+PropPointerMemOffsetCache[{Num_PropIndex}] = Offset;
+{Ref_AssignTo} = ({Declare_PropertyCPPType}*)((uint8*){Ref_ContainerAddr} + Offset);
 )EOF";
 
 const static TCHAR* PropDecorator_SetDeltaStateTemplate =
@@ -236,8 +225,9 @@ public:
       */
 	virtual FString GetDeclaration_PropertyPtr();
 
-	virtual FString GetCode_AssignPropPointer(const FString& Container, const FString& AssignTo);
-	virtual FString GetCode_AssignPropPointer(const FString& Container, const FString& AssignTo, int32 MemOffset);
+	virtual FString GetCode_AssignPropPointer(const FString& Container, const FString& AssignTo, int32 PropIndex);
+
+    virtual FString GetCode_AssignPropPointerRuntime(const FString& Container, const FString& AssignTo, int32 PropIndex);
 
 	/**
 	 * Code that get field value from protobuf message
@@ -282,7 +272,7 @@ public:
 	 */
 	virtual FString GetCode_SetDeltaState(const FString& TargetInstance, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false);
 
-	virtual FString GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false);
+	virtual FString GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, int32 PropIndex, bool ConditionFullStateIsNull = false);
 
 	virtual FString GetCode_SetDeltaStateArrayInner(const FString& PropertyPointer, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false);
 
@@ -298,7 +288,7 @@ public:
 	 */
 	virtual FString GetCode_OnStateChange(const FString& TargetInstanceName, const FString& NewStateName, bool NeedCallRepNotify = false);
 
-	virtual FString GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName);
+	virtual FString GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName, int32 PropIndex);
 
 	virtual FString GetCode_SetPropertyValueArrayInner(const FString& PropertyPointer, const FString& NewStateName);
 

@@ -172,6 +172,7 @@ FString FStructPropertyDecorator::GetDeclaration_PropPtrGroupStruct()
 	int32 PrevPropMemEnd = 0;
 
 	bool bFirstProperty = true;
+    int32 i = 0;
 	for (TSharedPtr<FPropertyDecorator> PropDecorator : Properties)
 	{
 		DeclarePropPtrCodes.Append(FString::Printf(TEXT("%s;\n"), *PropDecorator->GetDeclaration_PropertyPtr()));
@@ -179,7 +180,7 @@ FString FStructPropertyDecorator::GetDeclaration_PropPtrGroupStruct()
 		AssignPropertyPointerCodes.Append(
 			FString::Printf(
 				TEXT("{\n%s;\n}\n"),
-				*PropDecorator->GetCode_AssignPropPointer(TEXT("Container"), PropDecorator->GetPointerName())
+				*PropDecorator->GetCode_AssignPropPointer(TEXT("Container"), PropDecorator->GetPointerName(), i)
 			)
 		);
 
@@ -188,7 +189,7 @@ FString FStructPropertyDecorator::GetDeclaration_PropPtrGroupStruct()
 			AssignPropPointersForRPCCodes.Append(
 				FString::Printf(
 					TEXT("{\n%s;\nOutParams = OutParams->NextOutParm;\n}\n"),
-					*PropDecorator->GetCode_AssignPropPointer(TEXT("OutParams->PropAddr"), PropDecorator->GetPointerName(), 0)
+					*PropDecorator->GetCode_AssignPropPointer(TEXT("OutParams->PropAddr"), PropDecorator->GetPointerName(), i)
 				)
 			);
 		}
@@ -197,11 +198,10 @@ FString FStructPropertyDecorator::GetDeclaration_PropPtrGroupStruct()
 			AssignPropPointersForRPCCodes.Append(
 				FString::Printf(
 					TEXT("{\n%s;\n}\n"),
-					*PropDecorator->GetCode_AssignPropPointer(TEXT("Params"), PropDecorator->GetPointerName())
+					*PropDecorator->GetCode_AssignPropPointer(TEXT("Params"), PropDecorator->GetPointerName(), i)
 				)
 			);
 		}
-
 
 		SetDeltaStateCodes.Append(
 			PropDecorator->GetCode_SetDeltaState(
@@ -210,7 +210,7 @@ FString FStructPropertyDecorator::GetDeclaration_PropPtrGroupStruct()
 		);
 		StaticSetDeltaStateCodes.Append(
 			PropDecorator->GetCode_SetDeltaStateByMemOffset(
-				TEXT("Container"), TEXT("FullState"), TEXT("DeltaState"), true
+				TEXT("Container"), TEXT("FullState"), TEXT("DeltaState"), true, i
 			)
 		);
 
@@ -222,7 +222,7 @@ FString FStructPropertyDecorator::GetDeclaration_PropPtrGroupStruct()
 
 		StaticOnStateChangeCodes.Append(
 			PropDecorator->GetCode_OnStateChangeByMemOffset(
-				TEXT("Container"), TEXT("NewState")
+				TEXT("Container"), TEXT("NewState"), i
 			)
 		);
 
@@ -230,6 +230,7 @@ FString FStructPropertyDecorator::GetDeclaration_PropPtrGroupStruct()
 			FString::Printf(TEXT("%s %s;\n"), *PropDecorator->GetCompilableCPPType(), *PropDecorator->GetPropertyName())
 		);
 		if (bFirstProperty) { bFirstProperty = false; }
+        i++;
 	}
 	FormatArgs.Add(TEXT("Code_AssignPropPointers"), *AssignPropertyPointerCodes);
 	FormatArgs.Add(TEXT("Code_AssignPropPointersForRPC"), *AssignPropPointersForRPCCodes);
@@ -243,7 +244,8 @@ FString FStructPropertyDecorator::GetDeclaration_PropPtrGroupStruct()
 
 	FormatArgs.Add(TEXT("Declare_PropCompilableStructName"), GetCompilableCPPType());
 	FormatArgs.Add(TEXT("Code_StructCopyProperties"), StructCopyCode);
-
+    FormatArgs.Add(TEXT("Num_PropCount"), Properties.Num());
+    FormatArgs.Add(TEXT("Declare_CppType"), GetCPPType());
 	return FString::Format(StructPropDeco_PropPtrGroupStructTemp, FormatArgs);
 }
 

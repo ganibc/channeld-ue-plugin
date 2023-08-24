@@ -28,8 +28,8 @@ public:
 
 protected:
   TWeakObjectPtr<{Declare_TargetBaseClassName}> {Ref_TargetInstanceRef};
-  static TMap<FString, int32> PropPointerMemOffsetCache; 
-
+  static int32 PropPointerMemOffsetCache[{Num_PropCount}]; 
+  static bool bIsCacheInitialised; 
   // [Server+Client] The accumulated channel data of the target object
   {Declare_ProtoNamespace}::{Declare_ProtoStateMsgName}* FullState;
   // [Server] The accumulated delta change before next send
@@ -59,6 +59,13 @@ static const TCHAR* CodeGen_BP_ConstructorImplTemplate =
     return;
   }
 
-{Code_AssignPropertyPointers}
+  if (bIsCacheInitialised) {
+      {Code_AssignPropertyPointers}
+  }
+  else {
+     {Code_AssignPropertyPointersRuntime}
+     bIsCacheInitialised = true;
+  }
+
 }
 )EOF";

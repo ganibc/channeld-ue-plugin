@@ -273,6 +273,10 @@ bool FReplicatorCodeGenerator::GenerateReplicatorCode(
 		TEXT("Code_OverrideGetNetGUID"),
 		OverrideGetNetGUIDImplCode.IsEmpty() ? TEXT("") : TEXT("virtual uint32 GetNetGUID() override;")
 	);
+    FormatArgs.Add(
+        TEXT("Num_PropCount"),
+        ActorDecorator->GetStructPropertyDecorators().Num()
+    );
 
 	// RPC
 	FormatArgs.Add(TEXT("Declare_OverrideSerializeAndDeserializeFunctionParams"), ActorDecorator->GetRPCNum() > 0 ? CodeGen_SerializeAndDeserializeFunctionParams : TEXT(""));
@@ -290,6 +294,11 @@ bool FReplicatorCodeGenerator::GenerateReplicatorCode(
 		TEXT("Code_AssignPropertyPointers"),
 		ActorDecorator->GetCode_AssignPropertyPointers()
 	);
+    FormatArgs.Add(
+        TEXT("Code_AssignPropertyPointersRuntime"),
+        ActorDecorator->GetCode_AssignPropertyPointersRuntime()
+    );
+
 	CppCodeBuilder.Append(FString::Format(
 		bIsBlueprint ? CodeGen_BP_ConstructorImplTemplate : CodeGen_CPP_ConstructorImplTemplate,
 		FormatArgs

@@ -196,22 +196,47 @@ FString FReplicatedActorDecorator::GetCode_IndirectlyAccessiblePropertyPtrDeclar
 FString FReplicatedActorDecorator::GetCode_AssignPropertyPointers()
 {
 	FString Result;
-	for (TSharedPtr<FPropertyDecorator> Property : Properties)
-	{
-		if (!Property->IsDirectlyAccessible())
-		{
-			Result += FString::Printf(
-				TEXT("{ %s; }\n"),
-				*Property->GetCode_AssignPropPointer(
-					FString::Printf(TEXT("%s.Get()"), *InstanceRefName),
-					Property->GetPointerName()
-				)
-			);
-		}
-	}
+
+    int32 PropSize = Properties.Num();
+    for (int32 PropIndex = 0; PropIndex < PropSize; ++PropIndex) 
+    {
+        if (!Properties[PropIndex]->IsDirectlyAccessible())
+        {
+            Result += FString::Printf(
+                TEXT("{ %s; }\n"),
+                *Properties[PropIndex]->GetCode_AssignPropPointer(
+                    FString::Printf(TEXT("%s.Get()"), *InstanceRefName),
+                    Properties[PropIndex]->GetPointerName(),
+                    PropIndex
+                )
+            );
+        }
+    }
 	return Result;
 }
 
+FString FReplicatedActorDecorator::GetCode_AssignPropertyPointersRuntime()
+{
+    FString Result;
+
+    int32 PropSize = Properties.Num();
+    for (int32 PropIndex = 0; PropIndex < PropSize; ++PropIndex)
+    {
+        if (!Properties[PropIndex]->IsDirectlyAccessible())
+        {
+            Result += FString::Printf(
+                TEXT("{ %s; }\n"),
+                *Properties[PropIndex]->GetCode_AssignPropPointerRuntime(
+                    FString::Printf(TEXT("%s.Get()"), *InstanceRefName),
+                    Properties[PropIndex]->GetPointerName(),
+                    PropIndex
+                )
+            );
+        }
+    }
+
+    return Result;
+}
 
 FString FReplicatedActorDecorator::GetProtoPackageName()
 {

@@ -5,10 +5,22 @@ const static TCHAR* StructPropDeco_PropPtrGroupStructTemp =
 	LR"EOF(
 struct {Declare_PropPtrGroupStructName}
 {
+  static int32 PropPointerMemOffsetCache[{Num_PropCount}]; 
+  static bool bIsCacheInitialised; 
   {Declare_PropPtrGroupStructName}() {}
   {Declare_PropPtrGroupStructName}(void* Container)
+  
   {
-{Code_AssignPropPointers}
+    auto ActorClass = {Declare_CppType}::StaticStruct();
+    if (!ActorClass) return;
+    {Code_AssignPropPointers}
+    if (bIsCacheInitialised) {
+      {Code_AssignPropertyPointers}
+    }
+    else {
+     {Code_AssignPropertyPointersRuntime}
+     bIsCacheInitialised = true;
+    }
   }
 
   {Declare_PropPtrGroupStructName}(void* Params, FOutParmRec* OutParams)
@@ -56,30 +68,18 @@ struct {Declare_PropCompilableStructName}
 };
 )EOF";
 
-const static TCHAR* StructPropDeco_AssignPropPtrTemp =
+const static TCHAR* StructPropDeco_AssignPropPtrTempRuntime =
     LR"EOF(
 FString PropertyName = TEXT("{Declare_PropertyName}");
-void* PropertyAddr = (uint8*){Ref_ContainerAddr};
-int32* OffsetPtr = PropPointerMemOffsetCache.Find(PropertyName);
-if (OffsetPtr != nullptr)
-{    
-    {Ref_AssignTo} = ({Declare_PropPtrGroupStructName})(PropertyAddr + *OffsetPtr);
-}
-else
-{
-    FProperty* Property = ActorClass->FindPropertyByName(FName(*PropertyName));
-    if (Property)
-    {
-        int32 Offset = Property->GetOffset_ForInternal();
-        PropPointerMemOffsetCache.Emplace(PropertyName, Offset);
-        {Ref_AssignTo} = ({Declare_PropPtrGroupStructName})(PropertyAddr + Offset);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("%s Replicator construct, but could not find property(%s) in cache or by name."), *ActorClass->GetName(), *PropertyName);
-        {Ref_AssignTo} = ({Declare_PropPtrGroupStructName})(PropertyAddr + {Num_PropMemOffset});
-    }
-}
+FProperty* Property = ActorClass->FindPropertyByName(FName(*PropertyName));
+int32 Offset = Property->GetOffset_ForInternal();
+PropPointerMemOffsetCache[{Num_PropIndex}] = Offset;
+{Ref_AssignTo} = ({Declare_PropPtrGroupStructName})((uint8*){Ref_ContainerAddr} + Offset);
+)EOF";
+
+const static TCHAR* StructPropDeco_AssignPropPtrTemp =
+    LR"EOF(
+        {Ref_AssignTo} = ({Declare_PropPtrGroupStructName})(PropPointerMemOffsetCache[{Num_PropIndex}]);
 )EOF";
 
 const static TCHAR* StructPropDeco_SetDeltaStateArrayInnerTemp =
@@ -122,7 +122,7 @@ public:
 	
 	virtual FString GetDeclaration_PropertyPtr() override;
 	
-	virtual FString GetCode_AssignPropPointer(const FString& Container, const FString& AssignTo, int32 MemOffset) override;
+	virtual FString GetCode_AssignPropPointer(const FString& Container, const FString& AssignTo, int32 PropIndex) override;
 	
 	virtual TArray<FString> GetAdditionalIncludes() override;
 	
@@ -131,13 +131,13 @@ public:
 	
 	virtual FString GetCode_SetDeltaState(const FString& TargetInstance, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false) override;
 
-	virtual FString GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false) override;
+	virtual FString GetCode_SetDeltaStateByMemOffset(const FString& ContainerName, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false);
 
 	virtual FString GetCode_SetDeltaStateArrayInner(const FString& TargetInstance, const FString& FullStateName, const FString& DeltaStateName, bool ConditionFullStateIsNull = false) override;
 
 	virtual FString GetCode_SetPropertyValueTo(const FString& TargetInstance, const FString& NewStateName, const FString& AfterSetValueCode) override;
 
-	virtual FString GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName) override;
+	virtual FString GetCode_OnStateChangeByMemOffset(const FString& ContainerName, const FString& NewStateName);
 
 	virtual FString GetCode_SetPropertyValueArrayInner(const FString& TargetInstance, const FString& NewStateName) override;
 
